@@ -1,0 +1,29 @@
+appId: com.calcstudio.desktop
+productName: Calc Studio
+asar: true
+directories:
+  output: release
+files:
+  - dist/**/*
+  - desktop/**/*
+  - build/icon.ico
+  - package.json
+  - '!node_modules/**/*'
+win:
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+nsis:
+  artifactName: Calc-Studio-Setup-${version}.${ext}
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Calc Studio
+  runAfterFinish: false
+portable:
+  artifactName: Calc-Studio-Portable-${version}.${ext}

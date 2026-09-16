@@ -1,17 +1,35 @@
 # Calc Studio
 
-A Windows Calculator-inspired application for basic arithmetic, scientific calculations and symbolic algebra. Runs locally in a browser, with no account or calculation API required.
+A Windows Calculator-inspired desktop application for basic arithmetic, scientific calculations and symbolic algebra. Built with Electron and a bundled math.js engine. Runs in its own Windows window, without a browser, local server, account or calculation API. The browser development version remains available.
+
+## Install on Windows
+
+After building, open `release/Calc-Studio-Setup-1.0.0.exe` and follow the installer. It installs for the current user and can create Start menu and desktop shortcuts. Alternatively, open `release/Calc-Studio-Portable-1.0.0.exe` without installing.
+
+These builds target 64-bit Windows 10/11. Node.js is only needed to develop or build the app, not to run either executable. The local build is unsigned; Windows may show an unknown-publisher or SmartScreen notice. Public distribution should use a code-signing certificate.
+
+The desktop app stores its own history and theme under Electron's application data directory, separate from browser storage. Neither installer is automatically uploaded to GitHub.
 
 ## Run
 
-Requires Node.js 20.19+ or 22.12+.
+Requires Node.js 22.12+ (Node.js 24 LTS recommended).
 
 ```powershell
 npm.cmd install
-npm.cmd run dev
+npm.cmd run desktop
 ```
 
-Open http://127.0.0.1:5173. For a production build, run `npm.cmd run build`, then `npm.cmd run preview`.
+For browser development, run `npm.cmd run dev` and open http://127.0.0.1:5173. For a browser production build, run `npm.cmd run build`, then `npm.cmd run preview`.
+
+## Build the Windows executables
+
+```powershell
+npm.cmd run package:windows
+```
+
+Creates an installer, portable executable, and unpacked application in `release/`. The first build downloads the Electron runtime and NSIS packaging tools. Generated binaries are ignored by Git; share them as GitHub Release assets instead of committing them. Packaging is configured with `--publish never`.
+
+The icon is committed in `build/icon.ico`. To regenerate it from its source, run `node build/create-icon.mjs`.
 
 ## Features
 
@@ -48,6 +66,9 @@ History retains the latest 50 calculations in browser storage. Memory resets on 
 npm.cmd test
 npm.cmd run build
 npx.cmd playwright test
+npm.cmd run test:desktop
 ```
 
 Browser tests use an installed Microsoft Edge. Change `channel` in `playwright.config.js` to use another Playwright-supported browser.
+
+The desktop smoke test launches a hidden Electron window with a separate disposable profile. It checks numerical and symbolic operations, history across reloads, blocked remote requests, and renderer isolation. Desktop windows disable Node integration, enable Chromium sandboxing and context isolation, and prevent external navigation.

@@ -2,8 +2,26 @@
   "name": "calc-studio",
   "version": "1.0.0",
   "private": true,
+  "description": "Scientific and algebra calculator for Windows",
+  "author": "Felix Kaisha",
+  "main": "desktop/main.cjs",
   "type": "module",
-  "scripts": { "dev": "vite --host 127.0.0.1", "build": "vite build", "preview": "vite preview --host 127.0.0.1", "test": "node --test tests/*.test.js" },
-  "dependencies": { "mathjs": "^15.0.0" },
-  "devDependencies": { "vite": "^7.0.0", "@playwright/test": "^1.55.0" }
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node --test tests/*.test.js",
+    "desktop": "npm run build && electron .",
+    "test:desktop": "npm run build && electron . --smoke-test",
+    "package:windows": "npm run build && electron-builder --win --publish never"
+  },
+  "dependencies": {
+    "mathjs": "^15.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "electron": "^44.4.1",
+    "electron-builder": "^26.15.3",
+    "vite": "^7.0.0"
+  }
 }
