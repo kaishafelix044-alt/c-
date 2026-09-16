@@ -1,0 +1,3 @@
+:root{color-scheme:light;--bg:#f5f6f8;--surface:#fff;--aside:#fcfcfd;--ink:#242b38;--muted:#6c7483;--line:#e6e8ed;--accent:#5264c6;--accent-soft:#edf0fc;--key:#f5f6f9;--error:#bc303f}
+:root[data-theme=dark]{color-scheme:dark;--bg:#16191f;--surface:#20242c;--aside:#1d2129;--ink:#edf0f7;--muted:#a0a9ba;--line:#363c48;--accent:#a7b5ff;--accent-soft:#303951;--key:#292e38;--error:#ff9da6}
+:root[data-theme=dark] .primary,:root[data-theme=dark] .equal,:root[data-theme=dark] .logo{color:#16191f}
