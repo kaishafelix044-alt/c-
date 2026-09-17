@@ -1,4 +1,45 @@
 import { test, expect } from '@playwright/test';
+
+test('history replays the original answer after reload and releases it when edited', async ({ page }) => {
+  await page.goto('/');
+  const input = page.getByLabel('Mathematical expression');
+  for (const [expression, result] of [['2', '2'], ['ans * 3', '6'], ['99', '99']]) {
+    await input.fill(expression);
+    await input.press('Enter');
+    await expect(page.locator('#result')).toHaveText(result);
+  }
+  await page.reload();
+  await page.getByRole('button', { name: 'Restore ans * 3', exact: true }).click();
+  await input.press('Enter');
+  await expect(page.locator('.history-item')).toHaveCount(4);
+  await expect(page.locator('#result')).toHaveText('6');
+  await input.press('Enter');
+  await expect(page.locator('.history-item')).toHaveCount(5);
+  await expect(page.locator('#result')).toHaveText('6');
+  await input.fill('ans + 1');
+  await input.press('Enter');
+  await expect(page.locator('#result')).toHaveText('7');
+});
+
+test('malformed saved settings do not break history restoration', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('calc-history', JSON.stringify([
+    { expression: '2 + 3', text: '5', mode: 'missing', operation: 'missing', variable: {} },
+    null,
+    { expression: 'x + 1', text: '5', operation: 'substitute', mode: 'standard', value: '4' },
+  ])));
+  await page.goto('/');
+  await expect(page.locator('.history-item')).toHaveCount(2);
+  await page.getByRole('button', { name: 'Restore 2 + 3', exact: true }).click();
+  await page.locator('#expression').press('Enter');
+  await expect(page.locator('#result')).toHaveText('5');
+  await expect(page.locator('.history-item')).toHaveCount(3);
+  await page.getByRole('button', { name: 'Restore x + 1', exact: true }).click();
+  await expect(page.locator('#mode-title')).toHaveText('Algebra workspace');
+  await expect(page.locator('#operation')).toHaveValue('substitute');
+  await page.locator('#algebra-run').click();
+  await expect(page.locator('.history-item')).toHaveCount(4);
+  await expect(page.locator('#error')).toBeEmpty();
+});
 test('scientific, algebra, memory and persistent history work together',async({page})=>{
   await page.goto('/');
   await page.getByLabel('Mathematical expression').fill('sin(30)');

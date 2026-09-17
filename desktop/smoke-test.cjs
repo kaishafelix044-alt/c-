@@ -20,6 +20,7 @@ module.exports = async function smokeTest(window) {
   assert.equal(await window.webContents.executeJavaScript('typeof require'), 'undefined');
   const input = expression => window.webContents.executeJavaScript(`
     document.querySelector('#expression').value = ${JSON.stringify(expression)};
+    document.querySelector('#expression').dispatchEvent(new Event('input', {bubbles:true}));
     document.querySelector('#expression').dispatchEvent(new KeyboardEvent('keydown', {key:'Enter',bubbles:true}));
   `);
   await input('sin(30) + 2^3');
@@ -38,6 +39,25 @@ module.exports = async function smokeTest(window) {
   await waitUntil(window, 'document.querySelectorAll(".history-item").length === 2');
   await window.webContents.executeJavaScript('document.querySelector(".history-item").click()');
   assert.equal(await window.webContents.executeJavaScript('document.querySelector("#operation").value'), 'derivative');
+  await window.webContents.executeJavaScript('document.querySelector(\'[data-mode="scientific"]\').click()');
+  await input('2');
+  await waitUntil(window, 'document.querySelector("#result").textContent === "2"');
+  await input('ans * 3');
+  await waitUntil(window, 'document.querySelector("#result").textContent === "6"');
+  await input('99');
+  await waitUntil(window, 'document.querySelector("#result").textContent === "99"');
+  const reloaded = once(window.webContents, 'did-finish-load');
+  window.webContents.reload();
+  await reloaded;
+  await waitUntil(window, 'document.querySelectorAll(".history-item").length === 5');
+  await window.webContents.executeJavaScript(`
+    document.querySelector('[aria-label="Restore ans * 3"]').click();
+    document.querySelector('#expression').dispatchEvent(new KeyboardEvent('keydown', {key:'Enter',bubbles:true}));
+  `);
+  await waitUntil(window, 'document.querySelectorAll(".history-item").length === 6');
+  assert.equal(await window.webContents.executeJavaScript('document.querySelector("#result").textContent'), '6');
+  await input('ans + 1');
+  await waitUntil(window, 'document.querySelector("#result").textContent === "7"');
   const networkBlocked = await window.webContents.executeJavaScript('fetch("https://example.com").then(() => false).catch(() => true)');
   assert.equal(networkBlocked, true);
 };

@@ -1,4 +1,5 @@
 import './style.css';
+import { restoreHistory } from './history.js';
 
 const icons = {
  calculator:'<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8M8 10h1m6 0h1M8 14h1m6 0h1M8 18h1m6 0h1"/>',
@@ -18,9 +19,8 @@ const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(k
 const save = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* App remains usable without persistence. */ } };
 let mode = 'scientific', angle = 'DEG', inverse = false, hyperbolic = false;
 let ans = '0', memory = null, currentRaw = '0', busy = false, requestId = 0, timeout;
-let history = read('calc-history', []);
-if (!Array.isArray(history)) history = [];
-history = history.filter(item => item && typeof item.expression === 'string' && typeof item.text === 'string').slice(0, 50);
+let history = restoreHistory(read('calc-history', []));
+let replayAns = null;
 document.documentElement.dataset.theme = read('calc-theme', 'light') === 'dark' ? 'dark' : 'light';
 let worker, workerFailed = false;
 function startWorker() {
@@ -64,17 +64,19 @@ function run() {
   if (busy) return;
   if (workerFailed) startWorker();
   clearError();
-  pending = { expression:$('#expression').value, operation:mode==='algebra'?$('#operation').value:'evaluate', angle, mode, variable:$('#variable').value, value:$('#variable-value').value };
+  pending = { expression:$('#expression').value, operation:mode==='algebra'?$('#operation').value:'evaluate', angle, mode, variable:$('#variable').value, value:$('#variable-value').value, ans:replayAns ?? ans };
   setBusy(true);
-  worker.postMessage({ ...pending, ans, id:++requestId });
+  worker.postMessage({ ...pending, id:++requestId });
   timeout=setTimeout(()=>{worker.terminate(); startWorker(); setBusy(false); showError('This calculation took too long. Try a smaller expression.');},8000);
 }
 function insert(text) {
+  replayAns = null;
   const input=$('#expression');
   input.setRangeText(text,input.selectionStart,input.selectionEnd,'end');
   clearError(); input.focus();
 }
-function clear() { if(busy){clearTimeout(timeout);requestId++;worker.terminate();startWorker();setBusy(false);} $('#expression').value=''; $('#result').textContent='0'; $('#result').classList.remove('small'); currentRaw='0'; clearError(); }
+function cancelPending() { if(busy){clearTimeout(timeout);requestId++;worker.terminate();startWorker();setBusy(false);} }
+function clear() { cancelPending(); replayAns=null; $('#expression').value=''; $('#result').textContent='0'; $('#result').classList.remove('small'); currentRaw='0'; clearError(); }
 function renderKeys() {
   const trig = base => `${inverse?'a':''}${base}${hyperbolic?'h':''}`;
   const scientific = [
@@ -116,6 +118,9 @@ let toastTimer;
 function toast(message) { $('#toast').textContent=message;$('#toast').classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.add('hidden'),2500); }
 document.addEventListener('click', event=>{
   const button=event.target.closest('button');if(!button)return;
+  if(button.dataset.key && !['=', 'clear'].includes(button.dataset.key)) replayAns=null;
+  if(button.dataset.example!==undefined) replayAns=null;
+  if(button.dataset.history!==undefined){cancelPending();replayAns=history[Number(button.dataset.history)].ans;}
   if(button.dataset.mode)setMode(button.dataset.mode);
   if(button.dataset.angle){angle=button.dataset.angle;document.querySelectorAll('[data-angle]').forEach(b=>{b.classList.toggle('active',b.dataset.angle===angle);b.setAttribute('aria-pressed',String(b.dataset.angle===angle));});}
   if(button.dataset.key){const key=button.dataset.key;if(key==='=')run();else if(key==='clear')clear();else if(key==='back'){const input=$('#expression');const start=input.selectionStart,end=input.selectionEnd;input.setRangeText('',start===end?Math.max(0,start-1):start,end,'end');input.focus();clearError();}else if(key==='negate'||key==='reciprocal'){const input=$('#expression');input.value=key==='negate'?`-(${input.value||'0'})`:`1/(${input.value||'0'})`;input.focus();}else insert(key);}
@@ -127,7 +132,7 @@ $('#inverse').onclick=()=>{inverse=!inverse;$('#inverse').classList.toggle('acti
 $('#hyperbolic').onclick=()=>{hyperbolic=!hyperbolic;$('#hyperbolic').classList.toggle('active',hyperbolic);$('#hyperbolic').setAttribute('aria-pressed',String(hyperbolic));renderKeys();};
 $('#insert-ans').onclick=()=>insert('ans');
 $('#algebra-run').onclick=run;$('#operation').onchange=updateOperation;
-$('#expression').oninput=clearError;
+$('#expression').oninput=()=>{replayAns=null;clearError();};
 $('#memory-status').onclick=()=>toast(memory===null?'Memory is empty':`Memory: ${memory}`);
 $('#clear-history').onclick=()=>{history=[];save('calc-history',history);renderHistory();};
 $('#copy').onclick=async()=>{try{await navigator.clipboard.writeText($('#result').textContent);toast('Result copied');}catch{toast('Copy unavailable. Select the result to copy it.');}};

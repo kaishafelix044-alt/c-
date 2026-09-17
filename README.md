@@ -4,7 +4,7 @@ A Windows Calculator-inspired desktop application for basic arithmetic, scientif
 
 ## Install on Windows
 
-After building, open `release/Calc-Studio-Setup-1.0.0.exe` and follow the installer. It installs for the current user and can create Start menu and desktop shortcuts. Alternatively, open `release/Calc-Studio-Portable-1.0.0.exe` without installing.
+After building, open `release/Calc-Studio-Setup-1.0.1.exe` and follow the installer. It installs for the current user and can create Start menu and desktop shortcuts. Alternatively, open `release/Calc-Studio-Portable-1.0.1.exe` without installing.
 
 These builds target 64-bit Windows 10/11. Node.js is only needed to develop or build the app, not to run either executable. The local build is unsigned; Windows may show an unknown-publisher or SmartScreen notice. Public distribution should use a code-signing certificate.
 
@@ -53,6 +53,8 @@ The icon is committed in `build/icon.ico`. To regenerate it from its source, run
 | Unit conversion | `5 cm to inch` |
 
 Enter evaluates the expression; Escape clears it. Select an example to insert it, then calculate. History entries restore the expression, operation, angle units and substitution settings.
+
+New history entries also retain the original `ans` value, so recalculating a restored expression reproduces its original answer even after restarting. Editing the expression returns `ans` to the latest calculation result. Older entries without a saved answer context use `0` for replay; their original displayed results remain available.
 
 ## Mathematical scope
 
